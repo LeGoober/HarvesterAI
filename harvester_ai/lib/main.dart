@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(const HarvesterAiApp());
@@ -262,7 +263,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const FarmOnboardingScreen(),
+            builder: (context) => const HomeScreen(),
           ),
         );
       }
@@ -550,7 +551,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const FarmOnboardingScreen(),
+            builder: (context) => const HomeScreen(),
           ),
         );
       }
@@ -791,7 +792,7 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const FarmOnboardingScreen(),
+            builder: (context) => const HomeScreen(),
           ),
         );
       }
@@ -972,7 +973,7 @@ class _GuestAccessScreenState extends State<GuestAccessScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => const FarmOnboardingScreen(),
+            builder: (context) => const HomeScreen(),
           ),
         );
       }
