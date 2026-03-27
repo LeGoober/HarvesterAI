@@ -217,7 +217,6 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _isSignup = false;
   String? _errorMessage;
   final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -231,8 +230,10 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
 
     final phone = _phoneController.text.trim();
     final password = _passwordController.text.trim();
+    final name = _nameController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (phone.isEmpty || password.isEmpty) {
+    if (phone.isEmpty || password.isEmpty || name.isEmpty) {
       setState(() {
         _errorMessage = 'Please fill in all fields';
         _isLoading = false;
@@ -248,34 +249,19 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       return;
     }
 
-    if (_isSignup) {
-      final name = _nameController.text.trim();
-      if (name.isEmpty) {
-        setState(() {
-          _errorMessage = 'Please enter your name';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      if (password != _confirmPasswordController.text.trim()) {
-        setState(() {
-          _errorMessage = 'Passwords do not match';
-          _isLoading = false;
-        });
-        return;
-      }
+    if (password != confirmPassword) {
+      setState(() {
+        _errorMessage = 'Passwords do not match';
+        _isLoading = false;
+      });
+      return;
     }
 
     try {
       // Convert phone to email format for Firebase
       final email = '${phone.replaceAll(RegExp(r"[^0-9]"), "")}@harvesterai.local';
       
-      if (_isSignup) {
-        await _authService.signUpWithEmail(email: email, password: password);
-      } else {
-        await _authService.signInWithEmail(email: email, password: password);
-      }
+      await _authService.signUpWithEmail(email: email, password: password);
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -358,9 +344,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       color: Color(0xFFE9D8A6),
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      _isSignup ? 'Create Account' : 'Sign in with Phone',
-                      style: const TextStyle(
+                    const Text(
+                      'Create Account',
+                      style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -369,9 +355,7 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _isSignup
-                          ? 'Create your account with phone number'
-                          : 'Enter your phone number and password',
+                      'Create your account with phone number',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white.withValues(alpha: 0.7),
@@ -379,17 +363,14 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
-                    if (_isSignup)
-                      ...[
-                        _AuthTextField(
-                          controller: _nameController,
-                          label: 'Full Name',
-                          hint: 'Your name',
-                          icon: Icons.person_rounded,
-                          enabled: !_isLoading,
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                    _AuthTextField(
+                      controller: _nameController,
+                      label: 'Full Name',
+                      hint: 'Your name',
+                      icon: Icons.person_rounded,
+                      enabled: !_isLoading,
+                    ),
+                    const SizedBox(height: 16),
                     _AuthTextField(
                       controller: _phoneController,
                       label: 'Phone Number',
@@ -406,18 +387,15 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                       obscureText: true,
                       enabled: !_isLoading,
                     ),
-                    if (_isSignup)
-                      ...[
-                        const SizedBox(height: 16),
-                        _AuthTextField(
-                          controller: _confirmPasswordController,
-                          label: 'Confirm Password',
-                          hint: 'Confirm your password',
-                          icon: Icons.lock_rounded,
-                          obscureText: true,
-                          enabled: !_isLoading,
-                        ),
-                      ],
+                    const SizedBox(height: 16),
+                    _AuthTextField(
+                      controller: _confirmPasswordController,
+                      label: 'Confirm Password',
+                      hint: 'Confirm your password',
+                      icon: Icons.lock_rounded,
+                      obscureText: true,
+                      enabled: !_isLoading,
+                    ),
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 16),
                       Container(
@@ -463,38 +441,13 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
                                   ),
                                 ),
                               )
-                            : Text(
-                                _isSignup ? 'Create Account' : 'Sign In',
-                                style: const TextStyle(
+                            : const Text(
+                                'Create Account',
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _isSignup = !_isSignup;
-                            _errorMessage = null;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(
-                            _isSignup
-                                ? 'Already have an account? Sign In'
-                                : 'Don\'t have an account? Create One',
-                            style: const TextStyle(
-                              color: Color(0xFF1DC578),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 60),
@@ -521,7 +474,6 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  bool _isSignup = false;
   String? _errorMessage;
   final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -535,8 +487,10 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
+    final name = _nameController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty || name.isEmpty) {
       setState(() {
         _errorMessage = 'Please fill in all fields';
         _isLoading = false;
@@ -552,31 +506,16 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
       return;
     }
 
-    if (_isSignup) {
-      final name = _nameController.text.trim();
-      if (name.isEmpty) {
-        setState(() {
-          _errorMessage = 'Please enter your name';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      if (password != _confirmPasswordController.text.trim()) {
-        setState(() {
-          _errorMessage = 'Passwords do not match';
-          _isLoading = false;
-        });
-        return;
-      }
+    if (password != confirmPassword) {
+      setState(() {
+        _errorMessage = 'Passwords do not match';
+        _isLoading = false;
+      });
+      return;
     }
 
     try {
-      if (_isSignup) {
-        await _authService.signUpWithEmail(email: email, password: password);
-      } else {
-        await _authService.signInWithEmail(email: email, password: password);
-      }
+      await _authService.signUpWithEmail(email: email, password: password);
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -659,9 +598,9 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                       color: Color(0xFFE9D8A6),
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      _isSignup ? 'Create Account' : 'Sign in with Email',
-                      style: const TextStyle(
+                    const Text(
+                      'Create Account',
+                      style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
@@ -670,9 +609,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _isSignup
-                          ? 'Create your account with email'
-                          : 'Enter your email and password',
+                      'Create your account with email',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white.withValues(alpha: 0.7),
@@ -680,17 +617,14 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
-                    if (_isSignup)
-                      ...[
-                        _AuthTextField(
-                          controller: _nameController,
-                          label: 'Full Name',
-                          hint: 'Your name',
-                          icon: Icons.person_rounded,
-                          enabled: !_isLoading,
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                    _AuthTextField(
+                      controller: _nameController,
+                      label: 'Full Name',
+                      hint: 'Your name',
+                      icon: Icons.person_rounded,
+                      enabled: !_isLoading,
+                    ),
+                    const SizedBox(height: 16),
                     _AuthTextField(
                       controller: _emailController,
                       label: 'Email',
@@ -707,18 +641,15 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                       obscureText: true,
                       enabled: !_isLoading,
                     ),
-                    if (_isSignup)
-                      ...[
-                        const SizedBox(height: 16),
-                        _AuthTextField(
-                          controller: _confirmPasswordController,
-                          label: 'Confirm Password',
-                          hint: 'Confirm your password',
-                          icon: Icons.lock_rounded,
-                          obscureText: true,
-                          enabled: !_isLoading,
-                        ),
-                      ],
+                    const SizedBox(height: 16),
+                    _AuthTextField(
+                      controller: _confirmPasswordController,
+                      label: 'Confirm Password',
+                      hint: 'Confirm your password',
+                      icon: Icons.lock_rounded,
+                      obscureText: true,
+                      enabled: !_isLoading,
+                    ),
                     if (_errorMessage != null) ...[
                       const SizedBox(height: 16),
                       Container(
@@ -764,38 +695,13 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                                   ),
                                 ),
                               )
-                            : Text(
-                                _isSignup ? 'Create Account' : 'Sign In',
-                                style: const TextStyle(
+                            : const Text(
+                                'Create Account',
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _isSignup = !_isSignup;
-                            _errorMessage = null;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text(
-                            _isSignup
-                                ? 'Already have an account? Sign In'
-                                : 'Don\'t have an account? Create One',
-                            style: const TextStyle(
-                              color: Color(0xFF1DC578),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 60),
