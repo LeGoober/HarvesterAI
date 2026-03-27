@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/home_screen.dart';
 import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
+import 'models/user_model.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -187,6 +190,27 @@ class _AuthSelectionScreenState extends State<AuthSelectionScreen> {
                             ),
                           ),
                           const SizedBox(height: 28),
+                          // Login option for existing users
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ExistingUserLoginScreen(),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              'Already have an account? Log in',
+                              style: TextStyle(
+                                color: Color(0xFF1DC578),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 28),
                         ],
                       ),
                     ),
@@ -262,6 +286,23 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       final email = '${phone.replaceAll(RegExp(r"[^0-9]"), "")}@harvesterai.local';
       
       await _authService.signUpWithEmail(email: email, password: password);
+      
+      // Save user data to Firestore
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final userModel = UserModel(
+          uid: currentUser.uid,
+          email: email,
+          name: _nameController.text,
+          phoneNumber: phone,
+          location: 'Stellenbosch, Western Cape',
+          landSize: 15.0,
+          soilType: 'Clay Loam',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await FirestoreService().saveUser(userModel);
+      }
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -516,6 +557,23 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
     try {
       await _authService.signUpWithEmail(email: email, password: password);
+      
+      // Save user data to Firestore
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final userModel = UserModel(
+          uid: currentUser.uid,
+          email: email,
+          name: _nameController.text,
+          phoneNumber: '',
+          location: 'Stellenbosch, Western Cape',
+          landSize: 15.0,
+          soilType: 'Clay Loam',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await FirestoreService().saveUser(userModel);
+      }
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -733,6 +791,26 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
 
     try {
       await _authService.signInWithGoogle();
+      
+      // Save user data to Firestore on signup
+      if (isSignup) {
+        final currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          final userModel = UserModel(
+            uid: currentUser.uid,
+            email: currentUser.email ?? '',
+            name: currentUser.displayName ?? 'Farm Owner',
+            phoneNumber: '',
+            location: 'Stellenbosch, Western Cape',
+            landSize: 15.0,
+            soilType: 'Clay Loam',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          await FirestoreService().saveUser(userModel);
+        }
+      }
+      
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -1037,6 +1115,278 @@ class _GuestAccessScreenState extends State<GuestAccessScreen> {
                   ),
                   const SizedBox(height: 100),
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============= EXISTING USER LOGIN SCREEN =============
+class ExistingUserLoginScreen extends StatefulWidget {
+  const ExistingUserLoginScreen({super.key});
+
+  @override
+  State<ExistingUserLoginScreen> createState() => _ExistingUserLoginScreenState();
+}
+
+class _ExistingUserLoginScreenState extends State<ExistingUserLoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  String? _errorMessage;
+  final _authService = AuthService();
+
+  void _handleLogin() async {
+    setState(() {
+      _errorMessage = null;
+      _isLoading = true;
+    });
+
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please fill in all fields';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    if (!email.contains('@')) {
+      setState(() {
+        _errorMessage = 'Please enter a valid email';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      await _authService.loginWithEmail(email: email, password: password);
+
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _FarmBackdrop(),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0x00000000),
+                  const Color(0x1A000000),
+                  const Color(0x4D000000),
+                  const Color(0xCC000000),
+                ],
+                stops: const [0.0, 0.3, 0.6, 1.0],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.pop(context),
+                            splashColor: Colors.white.withValues(alpha: 0.1),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.arrow_back_rounded,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        const Text(
+                          'Welcome Back',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Log in to your HarvesterAI account',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+                            ),
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        TextField(
+                          controller: _emailController,
+                          style: const TextStyle(color: Colors.white),
+                          keyboardType: TextInputType.emailAddress,
+                          enabled: !_isLoading,
+                          decoration: InputDecoration(
+                            hintText: 'Email address',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                            contentPadding: const EdgeInsets.all(16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF1DC578),
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _passwordController,
+                          style: const TextStyle(color: Colors.white),
+                          obscureText: true,
+                          enabled: !_isLoading,
+                          decoration: InputDecoration(
+                            hintText: 'Password',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                            contentPadding: const EdgeInsets.all(16),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF1DC578),
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _handleLogin,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1DC578),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade700,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Log In',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't have an account? ",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text(
+                                'Sign up',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF1DC578),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

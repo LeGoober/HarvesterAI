@@ -11,7 +11,7 @@ class AuthService {
   // Stream of auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign up with email and password
+  // Sign up with email and password (creates new account)
   Future<UserCredential> signUpWithEmail({
     required String email,
     required String password,
@@ -23,12 +23,12 @@ class AuthService {
       );
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      throw _handleAuthException(e, isSignup: true);
     }
   }
 
-  // Sign in with email and password
-  Future<UserCredential> signInWithEmail({
+  // Login with email and password (existing account only)
+  Future<UserCredential> loginWithEmail({
     required String email,
     required String password,
   }) async {
@@ -39,7 +39,7 @@ class AuthService {
       );
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      throw _handleAuthException(e, isSignup: false);
     }
   }
 
@@ -57,7 +57,7 @@ class AuthService {
           await _auth.signInWithCredential(credential);
         },
         verificationFailed: (FirebaseAuthException e) {
-          throw _handleAuthException(e);
+          throw _handleAuthException(e, isSignup: true);
         },
         codeSent: (String verificationId, int? resendToken) {
           onCodeSent(verificationId);
@@ -65,7 +65,7 @@ class AuthService {
         codeAutoRetrievalTimeout: (String verificationId) {},
       );
     } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      throw _handleAuthException(e, isSignup: true);
     }
   }
 
@@ -81,11 +81,11 @@ class AuthService {
       );
       return await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      throw _handleAuthException(e, isSignup: true);
     }
   }
 
-  // Sign in with Google
+  // Sign in with Google (both signup and login)
   Future<UserCredential> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -104,7 +104,7 @@ class AuthService {
 
       return await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      throw _handleAuthException(e, isSignup: false);
     }
   }
 
@@ -113,7 +113,7 @@ class AuthService {
     try {
       return await _auth.signInAnonymously();
     } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
+      throw _handleAuthException(e, isSignup: false);
     }
   }
 
@@ -128,24 +128,30 @@ class AuthService {
   }
 
   // Handle Firebase Auth exceptions
-  String _handleAuthException(FirebaseAuthException e) {
+  String _handleAuthException(FirebaseAuthException e, {bool isSignup = true}) {
     switch (e.code) {
       case 'weak-password':
-        return 'The password provided is too weak.';
+        return 'The password provided is too weak. Please use at least 6 characters.';
       case 'email-already-in-use':
-        return 'The account already exists for that email.';
+        return 'This email is already registered. Please log in or use a different email to create a new account.';
       case 'invalid-email':
-        return 'The email address is badly formatted.';
+        return 'The email address is invalid. Please check and try again.';
       case 'user-not-found':
-        return 'No user found for that email.';
+        return 'No account found with this email. Please sign up to create a new account.';
       case 'wrong-password':
-        return 'Wrong password provided for that user.';
+        return 'Incorrect password. Please try again.';
+      case 'operation-not-allowed':
+        return 'Email/password authentication is not enabled. Please try another method.';
       case 'invalid-phone-number':
-        return 'The phone number is invalid.';
+        return 'The phone number is invalid. Please check and try again.';
       case 'too-many-requests':
-        return 'Too many login attempts. Please try again later.';
+        return 'Too many attempts. Please try again later.';
+      case 'user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with this email. Please log in or use a different email.';
       default:
-        return 'Authentication error: ${e.message}';
+        return '${isSignup ? "Signup" : "Login"} error: ${e.message}';
     }
   }
 }
