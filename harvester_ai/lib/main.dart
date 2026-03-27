@@ -258,20 +258,13 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       }
     }
 
-    // Simulate API call
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isSignup
-                  ? 'Account created with: $phone'
-                  : 'Logged in with: $phone',
-            ),
-            backgroundColor: const Color(0xFF1DC578),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const FarmOnboardingScreen(),
           ),
         );
-        setState(() => _isLoading = false);
       }
     });
   }
@@ -555,15 +548,11 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
     // Simulate API call
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isSignup ? 'Account created with: $email' : 'Logged in with: $email',
-            ),
-            backgroundColor: const Color(0xFF1DC578),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const FarmOnboardingScreen(),
           ),
         );
-        setState(() => _isLoading = false);
       }
     });
   }
@@ -800,17 +789,11 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
     // Simulate OAuth call
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isSignup
-                  ? 'Google sign-up initiated'
-                  : 'Google sign-in initiated',
-            ),
-            backgroundColor: const Color(0xFF1DC578),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const FarmOnboardingScreen(),
           ),
         );
-        setState(() => _isLoading = false);
       }
     });
   }
@@ -987,13 +970,11 @@ class _GuestAccessScreenState extends State<GuestAccessScreen> {
 
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Entering as Guest'),
-            backgroundColor: Color(0xFF1DC578),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const FarmOnboardingScreen(),
           ),
         );
-        setState(() => _isLoading = false);
       }
     });
   }
@@ -1586,6 +1567,520 @@ class _OfflinePill extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FarmOnboardingScreen extends StatefulWidget {
+  const FarmOnboardingScreen({super.key});
+
+  @override
+  State<FarmOnboardingScreen> createState() => _FarmOnboardingScreenState();
+}
+
+class _FarmOnboardingScreenState extends State<FarmOnboardingScreen> {
+  String _selectedLocation = 'Mpumalanga';
+  double _landSize = 5.0;
+  String _selectedSoilType = '';
+
+  void _handleNext() {
+    if (_selectedSoilType.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select a soil type'),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+      return;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          _FarmBackdrop(),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0x00000000),
+                  const Color(0x1A000000),
+                  const Color(0x4D000000),
+                  const Color(0xCC000000),
+                ],
+                stops: const [0.0, 0.3, 0.6, 1.0],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => Navigator.pop(context),
+                            splashColor: Colors.white.withValues(alpha: 0.1),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.arrow_back_rounded,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                size: 28,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const OnboardingLanguageSelector(),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    const FarmProfileHeader(userName: 'Thandi'),
+                    const SizedBox(height: 32),
+                    const OnboardingProgressIndicator(currentStep: 0),
+                    const SizedBox(height: 40),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Tell us about your farm',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    FarmLocationSelector(
+                      value: _selectedLocation,
+                      onChanged: (value) {
+                        setState(() => _selectedLocation = value);
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    LandSizeSlider(
+                      value: _landSize,
+                      onChanged: (value) {
+                        setState(() => _landSize = value);
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    SoilTypeSelector(
+                      selectedType: _selectedSoilType,
+                      onSelected: (type) {
+                        setState(() => _selectedSoilType = type);
+                      },
+                    ),
+                    const SizedBox(height: 48),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _handleNext,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1DC578),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class FarmProfileHeader extends StatelessWidget {
+  final String userName;
+
+  const FarmProfileHeader({required this.userName, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'Welcome, $userName!',
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Let\'s grow smarter',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1DC578),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
+class OnboardingProgressIndicator extends StatelessWidget {
+  final int currentStep;
+
+  const OnboardingProgressIndicator({required this.currentStep, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          '${currentStep + 1} / 3',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Row(
+          children: List.generate(3, (index) {
+            final isCurrent = index == currentStep;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                width: isCurrent ? 12 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: isCurrent
+                      ? const Color(0xFF1DC578)
+                      : Colors.white.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class FarmLocationSelector extends StatelessWidget {
+  final String value;
+  final Function(String) onChanged;
+
+  const FarmLocationSelector({
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final locations = [
+      'Mpumalanga',
+      'Gauteng',
+      'Limpopo',
+      'KwaZulu-Natal',
+      'Western Cape',
+      'Eastern Cape',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Location',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
+          ),
+          child: DropdownButton<String>(
+            value: value,
+            onChanged: (newValue) {
+              if (newValue != null) {
+                onChanged(newValue);
+              }
+            },
+            isExpanded: true,
+            underline: const SizedBox(),
+            dropdownColor: const Color(0xFF0A1F15),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+            icon: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(
+                Icons.expand_more,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            ),
+            items: locations.map((String location) {
+              return DropdownMenuItem<String>(
+                value: location,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Text(location),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.location_on, size: 16),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class LandSizeSlider extends StatelessWidget {
+  final double value;
+  final Function(double) onChanged;
+
+  const LandSizeSlider({
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Land size',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            Text(
+              '${value.toStringAsFixed(0)} hectares',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SliderTheme(
+          data: SliderThemeData(
+            trackHeight: 6,
+            thumbShape: const RoundSliderThumbShape(
+              enabledThumbRadius: 12,
+              elevation: 4,
+            ),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
+            activeTrackColor: const Color(0xFF1DC578),
+            inactiveTrackColor: Colors.white.withValues(alpha: 0.2),
+            thumbColor: Colors.white,
+          ),
+          child: Slider(
+            value: value,
+            min: 0.5,
+            max: 100,
+            onChanged: onChanged,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class SoilTypeSelector extends StatelessWidget {
+  final String selectedType;
+  final Function(String) onSelected;
+
+  const SoilTypeSelector({
+    required this.selectedType,
+    required this.onSelected,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final soilTypes = ['Clay', 'Loam', 'Sand'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Soil type',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: soilTypes.map((type) {
+            final isSelected = selectedType == type;
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: GestureDetector(
+                  onTap: () => onSelected(type),
+                  child: Container(
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF1DC578)
+                            : Colors.white.withValues(alpha: 0.2),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      image: DecorationImage(
+                        image: AssetImage(_getSoilImage(type)),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.black.withValues(
+                          alpha: isSelected ? 0.3 : 0.4,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          type,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? const Color(0xFF1DC578)
+                                : Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  String _getSoilImage(String type) {
+    return 'assets/soil_$type.png';
+  }
+}
+
+class OnboardingLanguageSelector extends StatefulWidget {
+  const OnboardingLanguageSelector({super.key});
+
+  @override
+  State<OnboardingLanguageSelector> createState() =>
+      _OnboardingLanguageSelectorState();
+}
+
+class _OnboardingLanguageSelectorState extends State<OnboardingLanguageSelector> {
+  static const List<String> _languages = ['EN', 'ZU', 'XH', 'AF'];
+  String _selectedLanguage = 'EN';
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: _languages.map((lang) {
+              final isSelected = _selectedLanguage == lang;
+              return GestureDetector(
+                onTap: () {
+                  setState(() => _selectedLanguage = lang);
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Text(
+                    lang,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ),
       ),
