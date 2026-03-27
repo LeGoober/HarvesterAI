@@ -129,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Heirloom',
+                        'Heirloom Tomatoes',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,

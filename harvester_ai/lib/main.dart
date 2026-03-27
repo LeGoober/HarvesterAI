@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_screen.dart';
+import 'services/auth_service.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const HarvesterAiApp());
 }
 
@@ -214,8 +221,9 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
   String? _errorMessage;
   final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
 
-  void _handleAuth() {
+  void _handleAuth() async {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
@@ -259,7 +267,16 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
       }
     }
 
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      // Convert phone to email format for Firebase
+      final email = '${phone.replaceAll(RegExp(r"[^0-9]"), "")}@harvesterai.local';
+      
+      if (_isSignup) {
+        await _authService.signUpWithEmail(email: email, password: password);
+      } else {
+        await _authService.signInWithEmail(email: email, password: password);
+      }
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -267,7 +284,14 @@ class _PhoneLoginScreenState extends State<PhoneLoginScreen> {
           ),
         );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -501,8 +525,9 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
   String? _errorMessage;
   final _nameController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
 
-  void _handleAuth() {
+  void _handleAuth() async {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
@@ -546,8 +571,13 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
       }
     }
 
-    // Simulate API call
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      if (_isSignup) {
+        await _authService.signUpWithEmail(email: email, password: password);
+      } else {
+        await _authService.signInWithEmail(email: email, password: password);
+      }
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -555,7 +585,14 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
           ),
         );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -783,12 +820,13 @@ class GoogleLoginScreen extends StatefulWidget {
 
 class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
   bool _isLoading = false;
+  final _authService = AuthService();
 
-  void _handleGoogleAuth(bool isSignup) {
+  void _handleGoogleAuth(bool isSignup) async {
     setState(() => _isLoading = true);
 
-    // Simulate OAuth call
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      await _authService.signInWithGoogle();
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -796,7 +834,14 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
           ),
         );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override
@@ -965,11 +1010,13 @@ class GuestAccessScreen extends StatefulWidget {
 
 class _GuestAccessScreenState extends State<GuestAccessScreen> {
   bool _isLoading = false;
+  final _authService = AuthService();
 
-  void _handleGuestAccess() {
+  void _handleGuestAccess() async {
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      await _authService.signInAsGuest();
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -977,7 +1024,14 @@ class _GuestAccessScreenState extends State<GuestAccessScreen> {
           ),
         );
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override
@@ -1264,7 +1318,6 @@ class _CropIconPainter extends CustomPainter {
       }
     }
 
-    // Draw decorative circle border
     final borderPaint = Paint()
       ..shader = LinearGradient(
         colors: [
